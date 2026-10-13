@@ -55,7 +55,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Público
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/alumnos/registro").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/salud", "/api/v1/catalogos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/salud", "/api/v1/catalogos/**", "/api/v1/alumnos/**").permitAll()
                 .requestMatchers("/api/v1/docs/**").permitAll()
                 // Lectura: cualquier usuario autenticado (la propiedad se valida en cada controlador)
                 .requestMatchers(HttpMethod.GET, "/api/v1/**").authenticated()

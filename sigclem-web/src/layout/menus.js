@@ -9,6 +9,7 @@ export const MENUS = {
     seccion: 'Alumno',
     elementos: [
       { a: '/alumno', etiqueta: 'Mi expediente', icono: IdCard, fin: true },
+      { a: '/alumno/examenes', etiqueta: 'Exámenes', icono: ClipboardList },
       { a: '/alumno/diagnostico', etiqueta: 'Evaluación de diagnóstico', icono: ClipboardCheck },
       { a: '/alumno/pagos', etiqueta: 'Pagos', icono: CreditCard },
       { a: '/alumno/boletas', etiqueta: 'Boletas', icono: FileText },
@@ -29,10 +30,11 @@ export const MENUS = {
     elementos: [
       { a: '/coordinacion', etiqueta: 'Panel', icono: LayoutDashboard, fin: true },
       { a: '/coordinacion/alumnos', etiqueta: 'Alumnos', icono: Users },
-      { a: '/coordinacion/diagnosticos', etiqueta: 'Diagnósticos y exámenes', icono: ClipboardList },
+      { a: '/coordinacion/diagnosticos', etiqueta: 'Exámenes de colocación', icono: ClipboardList },
+      { a: '/coordinacion/evaluaciones-diagnosticas', etiqueta: 'Evaluaciones diagnósticas', icono: ClipboardCheck },
       { a: '/coordinacion/facilitadores', etiqueta: 'Facilitadores', icono: UserSquare },
       { a: '/coordinacion/grupos', etiqueta: 'Grupos y horarios', icono: CalendarDays },
-      { a: '/coordinacion/comprobantes', etiqueta: 'Comprobantes', icono: Receipt },
+      { a: '/coordinacion/comprobantes', etiqueta: 'Pagos y tarifas', icono: Receipt },
       { a: '/coordinacion/constancias', etiqueta: 'Constancias', icono: Award },
       { a: '/coordinacion/lenguas-maternas', etiqueta: 'Lenguas maternas', icono: Languages },
       { a: '/coordinacion/reportes', etiqueta: 'Reportes', icono: BarChart3 },

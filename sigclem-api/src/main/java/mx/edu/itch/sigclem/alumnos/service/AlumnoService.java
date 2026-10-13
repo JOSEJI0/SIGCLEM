@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import mx.edu.itch.sigclem.alumnos.domain.Alumno;
 import mx.edu.itch.sigclem.alumnos.domain.AvanceNivel;
 import mx.edu.itch.sigclem.alumnos.domain.EstatusAvance;
+import mx.edu.itch.sigclem.alumnos.dto.AlumnoResumenDTO;
 import mx.edu.itch.sigclem.alumnos.dto.AvanceDTO;
 import mx.edu.itch.sigclem.alumnos.dto.ExpedienteDTO;
 import mx.edu.itch.sigclem.alumnos.dto.RegistroAlumnoRequest;
@@ -36,6 +40,8 @@ import mx.edu.itch.sigclem.seguridad.repository.UsuarioRepository;
 @RequiredArgsConstructor
 public class AlumnoService {
 
+    private static final int TAMANO_MAXIMO_PAGINA = 100;
+
     private final AlumnoRepository alumnoRepository;
     private final AvanceNivelRepository avanceRepository;
     private final CarreraRepository carreraRepository;
@@ -43,6 +49,23 @@ public class AlumnoService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+
+    /** CU-16/CU-21: consulta paginada y filtrable para coordinación y supervisión. */
+    @Transactional(readOnly = true)
+    public Page<AlumnoResumenDTO> buscar(String busqueda, Pageable pageable) {
+        String criterio = busqueda == null ? "" : busqueda.trim();
+        Pageable paginaSegura = pageable.getPageSize() > TAMANO_MAXIMO_PAGINA
+                ? PageRequest.of(pageable.getPageNumber(), TAMANO_MAXIMO_PAGINA, pageable.getSort())
+                : pageable;
+        return alumnoRepository.buscarCoincidencias(criterio, paginaSegura)
+                .map(alumno -> new AlumnoResumenDTO(
+                        alumno.getNumeroControl(),
+                        alumno.nombreCompleto(),
+                        alumno.getCarrera().getNombre(),
+                        alumno.getSemestre(),
+                        alumno.getCorreo(),
+                        alumno.getFechaInscripcion()));
+    }
 
     /**
      * CU-02: crea la cuenta (siempre con rol Alumno), el expediente y el avance reticular inicial:
@@ -90,6 +113,25 @@ public class AlumnoService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("ALUM-003",
                         "No existe un alumno con número de control " + numeroControl + "."));
         return armarExpediente(alumno, avanceRepository.findByIdNumeroControl(numeroControl));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AvanceDTO> avance(String numeroControl) {
+        if (!alumnoRepository.existsById(numeroControl)) {
+            throw new RecursoNoEncontradoException("ALUM-003",
+                    "No existe un alumno con número de control " + numeroControl + ".");
+        }
+        List<AvanceNivel> avance = avanceRepository.findByIdNumeroControl(numeroControl);
+        Map<Integer, AvanceNivel> porNivel = avance.stream()
+                .collect(Collectors.toMap(a -> a.getId().getIdNivel(), Function.identity()));
+        List<Nivel> niveles = nivelRepository.findAllByOrderByNumeroAsc();
+
+        return niveles.stream().map(n -> {
+            AvanceNivel a = porNivel.get(n.getId());
+            EstatusAvance e = a == null ? EstatusAvance.NO_PERMITIDO : a.getEstatus();
+            return new AvanceDTO(n.getNumero(), n.getNombre(), n.getNivelMcer(), e.etiqueta(),
+                    a == null ? null : a.getOrigen());
+        }).toList();
     }
 
     private ExpedienteDTO armarExpediente(Alumno alumno, List<AvanceNivel> avance) {

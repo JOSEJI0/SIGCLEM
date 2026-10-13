@@ -10,4 +10,6 @@ import mx.edu.itch.sigclem.alumnos.domain.AvanceNivelId;
 public interface AvanceNivelRepository extends JpaRepository<AvanceNivel, AvanceNivelId> {
 
     List<AvanceNivel> findByIdNumeroControl(String numeroControl);
+
+    java.util.Optional<AvanceNivel> findByIdNumeroControlAndIdIdNivel(String numeroControl, Integer idNivel);
 }

@@ -13,4 +13,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     boolean existsByNombreUsuario(String nombreUsuario);
 
     boolean existsByRolNombre(String nombreRol);
+
+    Optional<Usuario> findFirstByRolNombreAndActivoTrueOrderByIdAsc(String nombreRol);
 }

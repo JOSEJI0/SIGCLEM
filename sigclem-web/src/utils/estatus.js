@@ -8,8 +8,8 @@ const CLASES = {
 };
 
 const TONO_POR_ESTATUS = {
-  Acreditado: 'ok', Validado: 'ok', Emitida: 'ok', Concluida: 'ok',
-  Cursando: 'aviso', Pendiente: 'aviso', Solicitada: 'aviso', Habilitado: 'aviso', Programada: 'info',
+  Acreditado: 'ok', Validado: 'ok', Emitida: 'ok', Concluida: 'ok', Concluido: 'ok',
+  Cursando: 'aviso', Pendiente: 'aviso', Solicitada: 'aviso', Habilitado: 'aviso', Programada: 'info', Programado: 'info',
   Rechazado: 'error', Rechazada: 'error', Reprobado: 'error',
   Exento: 'info', Autorizada: 'info',
   'No permitido': 'neutro',

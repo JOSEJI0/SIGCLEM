@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { ETIQUETA_ROL } from '../auth/roles';
@@ -13,9 +13,9 @@ function iniciales(nombre = '') {
 export default function LayoutPrincipal() {
   const { perfil, cerrarSesion } = useAuth();
   const [abierto, setAbierto] = useState(false);
-  const navegar = useNavigate();
   const { pathname } = useLocation();
-  const menu = MENUS[perfil.rol];
+  const navegar = useNavigate();
+  const menu = MENUS[perfil?.rol] || MENUS.COORDINADOR;
   const actual = [...menu.elementos].reverse().find((e) => (e.fin ? pathname === e.a : pathname.startsWith(e.a)));
 
   const salir = () => {
@@ -52,9 +52,6 @@ export default function LayoutPrincipal() {
             </div>
           ))}
         </nav>
-        <button onClick={salir} className="flex items-center gap-2 border-t border-white/10 px-5 py-3.5 text-left text-xs text-[#9FB0CE] hover:text-white">
-          <LogOut className="h-4 w-4" /> Cerrar sesión
-        </button>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -64,17 +61,38 @@ export default function LayoutPrincipal() {
             <h1 className="text-lg font-semibold leading-tight">{actual?.etiqueta ?? 'SIGCLEM'}</h1>
             <div className="text-xs text-tenue">{menu.seccion}</div>
           </div>
+
           <div className="ml-auto flex items-center gap-4">
-            <IconoNotificaciones className="h-5 w-5 text-tenue" aria-label="Notificaciones" />
+            {perfil?.rol === 'COORDINADOR' ? (
+              <Link to="/coordinacion/mensajes" aria-label="Abrir mensajes" title="Mensajes">
+                <IconoNotificaciones className="h-5 w-5 text-tenue" />
+              </Link>
+            ) : perfil?.rol === 'JEFA_DGTV' ? (
+              <Link to="/supervision/mensajes" aria-label="Abrir mensajes" title="Mensajes">
+                <IconoNotificaciones className="h-5 w-5 text-tenue" />
+              </Link>
+            ) : (
+              <IconoNotificaciones className="h-5 w-5 text-tenue" aria-label="Notificaciones" />
+            )}
             <div className="flex items-center gap-2.5">
               <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-marino text-[13px] font-semibold text-white">
-                {iniciales(perfil.nombre)}
+                {iniciales(perfil?.nombre)}
               </div>
               <div className="hidden sm:block">
-                <div className="text-[13px] font-semibold leading-tight">{perfil.nombre}</div>
-                <div className="text-[11.5px] text-tenue">{ETIQUETA_ROL[perfil.rol]}</div>
+                <div className="text-[13px] font-semibold leading-tight">{perfil?.nombre}</div>
+                <div className="text-[11.5px] text-tenue">{ETIQUETA_ROL[perfil?.rol]}</div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={salir}
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-[#C9D1DD] px-2.5 py-2 text-[13px] font-semibold text-marino transition hover:bg-fondo sm:px-3"
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+            >
+              <LogOut className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Cerrar sesión</span>
+            </button>
           </div>
         </header>
         <main className="flex flex-col gap-[18px] p-4 sm:px-6 sm:py-[22px]">

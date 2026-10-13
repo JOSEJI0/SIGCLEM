@@ -1,0 +1,28 @@
+package mx.edu.itch.sigclem.grupos.repository;
+
+import java.time.LocalTime;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import mx.edu.itch.sigclem.grupos.domain.Horario;
+
+public interface HorarioRepository extends JpaRepository<Horario, Integer> {
+
+    @Query("""
+            select h from Horario h
+            where h.diaSemana = :dia
+              and h.horaInicio < :fin and h.horaFin > :inicio
+              and h.grupo.periodo.id = :periodoId
+              and (h.grupo.facilitador.id = :facilitadorId or h.grupo.aula.id = :aulaId)
+            """)
+    Optional<Horario> buscarTraslape(
+            @Param("dia") Integer dia,
+            @Param("inicio") LocalTime inicio,
+            @Param("fin") LocalTime fin,
+            @Param("periodoId") Integer periodoId,
+            @Param("facilitadorId") Integer facilitadorId,
+            @Param("aulaId") Integer aulaId);
+}

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import mx.edu.itch.sigclem.catalogos.dto.CarreraDTO;
 import mx.edu.itch.sigclem.catalogos.dto.NivelDTO;
+import mx.edu.itch.sigclem.catalogos.dto.ModalidadDTO;
+import mx.edu.itch.sigclem.catalogos.repository.ModalidadRepository;
 import mx.edu.itch.sigclem.catalogos.repository.CarreraRepository;
 import mx.edu.itch.sigclem.catalogos.repository.NivelRepository;
 
@@ -23,6 +25,7 @@ public class CatalogoController {
 
     private final CarreraRepository carreraRepository;
     private final NivelRepository nivelRepository;
+    private final ModalidadRepository modalidadRepository;
 
     @GetMapping("/carreras")
     public List<CarreraDTO> carreras() {
@@ -32,5 +35,10 @@ public class CatalogoController {
     @GetMapping("/niveles")
     public List<NivelDTO> niveles() {
         return nivelRepository.findAllByOrderByNumeroAsc().stream().map(NivelDTO::desde).toList();
+    }
+
+    @GetMapping("/modalidades")
+    public List<ModalidadDTO> modalidades() {
+        return modalidadRepository.findAllByOrderByNombreAsc().stream().map(ModalidadDTO::desde).toList();
     }
 }

@@ -1,0 +1,201 @@
+import { useEffect, useState } from 'react';
+import { Award, CheckCircle2, Download, XCircle } from 'lucide-react';
+import {
+  autorizarConstancia, descargarPdfConstancia, listarConstancias, rechazarConstancia,
+} from '../../api/constancias';
+import { mensajeError } from '../../api/cliente';
+import { Alerta, Boton, Campo, Cargando, Insignia, Tarjeta, claseEntrada } from '../../components/ui';
+
+function fecha(iso) {
+  return iso ? new Date(`${iso}T00:00:00`).toLocaleDateString('es-MX') : '—';
+}
+
+function guardarPdf(blob, nombre) {
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = nombre;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export default function Constancias() {
+  const [constancias, setConstancias] = useState([]);
+  const [filtro, setFiltro] = useState('Solicitada');
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [seleccionada, setSeleccionada] = useState(null);
+  const [modo, setModo] = useState('');
+  const [folio, setFolio] = useState('');
+  const [motivo, setMotivo] = useState('');
+  const [error, setError] = useState('');
+  const [exito, setExito] = useState('');
+
+  const cargar = () => {
+    setCargando(true);
+    listarConstancias(filtro || undefined)
+      .then((data) => {
+        setConstancias(data);
+        setError('');
+      })
+      .catch((err) => setError(mensajeError(err)))
+      .finally(() => setCargando(false));
+  };
+
+  useEffect(() => {
+    cargar();
+  }, [filtro]);
+
+  const abrir = (item, accion) => {
+    setSeleccionada(item);
+    setModo(accion);
+    setFolio('');
+    setMotivo('');
+    setError('');
+  };
+
+  const guardar = async (event) => {
+    event.preventDefault();
+    setGuardando(true);
+    setError('');
+    try {
+      if (modo === 'autorizar') {
+        const folioNormalizado = folio.trim().toUpperCase();
+        await autorizarConstancia(seleccionada.id, folioNormalizado);
+        setExito(`Constancia emitida con el folio ${folioNormalizado}.`);
+      } else {
+        await rechazarConstancia(seleccionada.id, motivo.trim());
+        setExito(`Solicitud de ${seleccionada.nombreAlumno} rechazada y notificada.`);
+      }
+      setSeleccionada(null);
+      cargar();
+    } catch (err) {
+      setError(mensajeError(err));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const descargar = async (item) => {
+    setError('');
+    try {
+      const respuesta = await descargarPdfConstancia(item.id);
+      guardarPdf(respuesta.data, `constancia-${item.folio}.pdf`);
+    } catch (err) {
+      setError(mensajeError(err));
+    }
+  };
+
+  return (
+    <div className="grid gap-5">
+      <div>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Award className="h-5 w-5" /> Constancias</h1>
+        <p className="mt-1 text-sm text-tenue">Revisa, emite o rechaza las constancias de acreditación de inglés.</p>
+      </div>
+
+      {error && <Alerta tipo="error">{error}</Alerta>}
+      {exito && <Alerta tipo="ok">{exito}</Alerta>}
+
+      <Tarjeta titulo="Solicitudes y constancias">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <label className="text-xs font-semibold" htmlFor="filtro-estatus">Mostrar</label>
+          <select id="filtro-estatus" className={`${claseEntrada} max-w-xs`} value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+            <option value="">Todas</option>
+            <option value="Solicitada">Pendientes</option>
+            <option value="Emitida">Emitidas</option>
+            <option value="Rechazada">Rechazadas</option>
+          </select>
+        </div>
+        {cargando ? <Cargando /> : constancias.length === 0 ? (
+          <p className="py-6 text-center text-sm text-tenue">No hay constancias para este filtro.</p>
+        ) : (
+          <div className="grid gap-3">
+            {constancias.map((item) => (
+              <article key={item.id} className="rounded-lg border border-linea p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h2 className="font-semibold">{item.nombreAlumno}</h2>
+                    <p className="text-xs text-tenue">
+                      {item.numeroControl} · {item.carrera} · Solicitud: {fecha(item.fechaSolicitud)}
+                    </p>
+                  </div>
+                  <Insignia tono={item.estatus === 'Emitida' ? 'ok' : item.estatus === 'Rechazada' ? 'error' : 'aviso'}>
+                    {item.estatus}
+                  </Insignia>
+                </div>
+                <p className="mt-2 text-sm">
+                  {item.idioma} · {item.nivelesAcreditados} niveles · {item.totalHoras} horas · MCER {item.nivelMcer}
+                </p>
+                {item.estatus === 'Solicitada' ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Boton onClick={() => abrir(item, 'autorizar')}>
+                      <CheckCircle2 className="h-4 w-4" /> Emitir constancia
+                    </Boton>
+                    <Boton variante="peligro" onClick={() => abrir(item, 'rechazar')}>
+                      <XCircle className="h-4 w-4" /> Rechazar
+                    </Boton>
+                  </div>
+                ) : item.estatus === 'Emitida' ? (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span>Folio {item.folio} · Fecha de emisión: {fecha(item.fechaExpedicion)}</span>
+                    <Boton variante="secundario" onClick={() => descargar(item)}>
+                      <Download className="h-4 w-4" /> Descargar PDF
+                    </Boton>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-error">Motivo: {item.motivoRechazo}</p>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </Tarjeta>
+
+      {seleccionada && (
+        <Tarjeta titulo={modo === 'autorizar' ? 'Emitir constancia' : 'Rechazar solicitud'}>
+          <form className="grid gap-4" onSubmit={guardar}>
+            <p className="text-sm text-tenue">
+              {seleccionada.nombreAlumno} · {seleccionada.numeroControl} · {seleccionada.idioma}
+            </p>
+            {modo === 'autorizar' ? (
+              <Campo etiqueta="Folio único" id="folio" ayuda="Usa únicamente letras mayúsculas y números (máximo 20).">
+                <input
+                  id="folio"
+                  className={claseEntrada}
+                  value={folio}
+                  onChange={(event) => setFolio(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20))}
+                  required
+                  autoComplete="off"
+                  autoFocus
+                />
+              </Campo>
+            ) : (
+              <Campo etiqueta="Motivo del rechazo" id="motivo">
+                <textarea
+                  id="motivo"
+                  className={claseEntrada}
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value.slice(0, 200))}
+                  rows={3}
+                  required
+                  maxLength={200}
+                  autoFocus
+                />
+              </Campo>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Boton type="submit" disabled={guardando}>
+                {guardando ? 'Procesando…' : modo === 'autorizar' ? 'Generar PDF y emitir' : 'Rechazar y notificar'}
+              </Boton>
+              <Boton variante="secundario" type="button" onClick={() => setSeleccionada(null)} disabled={guardando}>
+                Cancelar
+              </Boton>
+            </div>
+          </form>
+        </Tarjeta>
+      )}
+    </div>
+  );
+}

@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import mx.edu.itch.sigclem.alumnos.repository.AlumnoRepository;
+import mx.edu.itch.sigclem.facilitadores.repository.FacilitadorRepository;
 import mx.edu.itch.sigclem.seguridad.domain.RolSistema;
 import mx.edu.itch.sigclem.seguridad.dto.PerfilResponse;
 
@@ -14,6 +15,7 @@ import mx.edu.itch.sigclem.seguridad.dto.PerfilResponse;
 public class PerfilService {
 
     private final AlumnoRepository alumnoRepository;
+    private final FacilitadorRepository facilitadorRepository;
 
     @Transactional(readOnly = true)
     public PerfilResponse perfil(UsuarioAutenticado u) {
@@ -22,8 +24,11 @@ public class PerfilService {
             nombre = alumnoRepository.findByUsuarioId(u.id())
                     .map(a -> a.getNombre() + " " + a.getApellidoPaterno())
                     .orElse(nombre);
+        } else if (u.rol() == RolSistema.FACILITADOR) {
+            nombre = facilitadorRepository.findByUsuarioId(u.id())
+                    .map(f -> f.getNombre() + " " + f.getApellidoPaterno())
+                    .orElse(nombre);
         }
-        // TODO (módulo docentes): nombre del facilitador desde la tabla FACILITADOR.
         return new PerfilResponse(u.id(), u.getUsername(), nombre, u.rol().name());
     }
 }
